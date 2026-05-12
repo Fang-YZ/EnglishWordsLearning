@@ -4,9 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.myapplication.databinding.FragmentSecondBinding;
 
@@ -26,32 +28,45 @@ public class SecondFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. 接收从 FirstFragment 传递过来的数据
-        if (getArguments() != null) {
-            Word selectedWord = (Word) getArguments().getSerializable("selected_word");
-            
-            if (selectedWord != null) {
-                // 设置界面显示的英文单词
-                binding.tvDetailEnglish.setText(selectedWord.english);
-                // 设置隐藏的中文释义
-                binding.tvDetailChinese.setText(selectedWord.chinese);
-            }
+        // 1. 获取传递来的单词，并增加【防御性检查】防止闪退
+        if (getArguments() == null) {
+            Toast.makeText(getContext(), "数据出错了", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        // 2. “显示答案”按钮的点击逻辑
-        binding.buttonSecond.setOnClickListener(v -> {
-            // 如果中文释义还没显示，说明是第一次点击
-            if (binding.tvDetailChinese.getVisibility() != View.VISIBLE) {
-                // 执行第一步：让中文释义变为可见
-                binding.tvDetailChinese.setVisibility(View.VISIBLE);
-                // 修改按钮文字，引导用户下一步操作
-                binding.buttonSecond.setText("记住了，返回列表");
-            } else {
-                // 如果中文已经显示了，说明是第二次点击
-                // 执行第二步：利用导航控制器返回上一页（列表页）
-                androidx.navigation.fragment.NavHostFragment.findNavController(SecondFragment.this)
-                        .popBackStack();
-            }
+        Word word = (Word) getArguments().getSerializable("selected_word");
+        
+        if (word == null) {
+            Toast.makeText(getContext(), "找不到该单词", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 确保 word 不为空后再设置文字
+        binding.tvDetailEnglish.setText(word.english);
+        binding.tvDetailChinese.setText(word.chinese);
+
+        // 2. 点击“看答案”逻辑
+        binding.btnShowAnswer.setOnClickListener(v -> {
+            // 显示中文
+            binding.tvDetailChinese.setVisibility(View.VISIBLE);
+            // 隐藏当前按钮
+            binding.btnShowAnswer.setVisibility(View.GONE);
+            // 显示“认识/不认识”按钮组
+            binding.layoutQuizActions.setVisibility(View.VISIBLE);
+        });
+
+        // 3. 点击“认识”
+        binding.btnKnow.setOnClickListener(v -> {
+            word.mastered = true; // 记录进度
+            Toast.makeText(getContext(), "太棒了！记住了 +1", Toast.LENGTH_SHORT).show();
+            NavHostFragment.findNavController(this).popBackStack(); // 返回列表
+        });
+
+        // 4. 点击“不认识”
+        binding.btnDontKnow.setOnClickListener(v -> {
+            word.mastered = false;
+            Toast.makeText(getContext(), "没关系，再接再厉！", Toast.LENGTH_SHORT).show();
+            NavHostFragment.findNavController(this).popBackStack(); // 返回列表
         });
     }
 

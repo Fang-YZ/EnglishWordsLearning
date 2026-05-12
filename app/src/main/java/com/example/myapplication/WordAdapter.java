@@ -24,24 +24,38 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
     @NonNull
     @Override
     public WordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 加载 item_word.xml 布局
+        // A. 加载 item_word.xml 布局并生成 Binding 对象
         ItemWordBinding binding = ItemWordBinding.inflate(
-                LayoutInflater.from(parent.getContext()), parent, false);
+                LayoutInflater.from(parent.getContext()), // 获取加载器的上下文
+                parent,                                   // 指定父容器
+                false                                     // 不要立即挂载到父容器上
+        );
+
+        // B. 将生成的 Binding 对象交给“握持者（ViewHolder）”并返回
         return new WordViewHolder(binding);
     }
 
     @Override
     public void onBindViewHolder(@NonNull WordViewHolder holder, int position) {
+        // A. 根据当前位置（position）从列表中拿到具体的单词数据对象
         Word word = words.get(position);
-        holder.binding.tvEnglish.setText(word.english); // 设置单词文本
 
-        // 设置点击事件
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(word));
+        // B. 将数据填充到 ViewBinding 提供的控件中
+        holder.binding.tvEnglish.setText(word.english); // 设置英文单词文本
+
+        // C. 为整个条目（ItemView）设置点击监听
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                // 当这一行被点击时，通知外界（Fragment）哪个单词被选中了
+                listener.onItemClick(word);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return words.size();
+        // 告诉系统：数据列表里有多少个单词，界面就显示多少行
+        return words != null ? words.size() : 0;
     }
 
     static class WordViewHolder extends RecyclerView.ViewHolder {
