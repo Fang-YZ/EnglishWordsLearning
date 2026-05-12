@@ -4,15 +4,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="#F8F9FA">
 
+    <!-- 单词显示大卡片 -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_margin="32dp"
         app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/button_second"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/btn_show_answer">
+        app:layout_constraintVertical_chainStyle="packed">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -24,30 +27,32 @@
                 android:id="@+id/tv_detail_english"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Commit"
-                android:textSize="40sp"
+                android:text="Apple"
+                android:textColor="#212121"
+                android:textSize="44sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_detail_chinese"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="提交"
+                android:layout_marginTop="24dp"
+                android:text="苹果"
                 android:textColor="#FF4081"
-                android:textSize="24sp"
-                android:visibility="invisible" /> <!-- 默认隐藏，点击后显示 -->
+                android:textSize="28sp"
+                android:visibility="invisible" /> <!-- 初始隐藏 -->
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
     <Button
-        android:id="@+id/btn_show_answer"
+        android:id="@+id/button_second"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="查看释义"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="64dp"
+        android:paddingHorizontal="32dp"
+        android:text="显示答案"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

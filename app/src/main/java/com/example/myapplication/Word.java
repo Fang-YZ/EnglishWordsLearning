@@ -1,6 +1,8 @@
+// Word.java
 package com.example.myapplication;
+import java.io.Serializable;
 
-public class Word {
+public class Word implements Serializable {
     public String english;
     public String chinese;
 
