@@ -42,13 +42,13 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
         Word word = words.get(position);
 
         // B. 将数据填充到 ViewBinding 提供的控件中
-        holder.binding.tvEnglish.setText(word.english); // 设置英文单词文本
+        holder.binding.tvEnglish.setText(word.english); 
 
-        // 新增逻辑：根据是否掌握来改变文字颜色
+        // 逻辑更新：根据掌握情况区分颜色
         if (word.mastered) {
-            holder.binding.tvEnglish.setTextColor(Color.parseColor("#4CAF50")); // 绿色
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#4CAF50")); // 认识的词：绿色
         } else {
-            holder.binding.tvEnglish.setTextColor(Color.parseColor("#333333")); // 默认灰黑色
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#F44336")); // 不认识/新词：红色
         }
 
         // C. 为整个条目（ItemView）设置点击监听
@@ -64,6 +64,11 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
     public int getItemCount() {
         // 告诉系统：数据列表里有多少个单词，界面就显示多少行
         return words != null ? words.size() : 0;
+    }
+
+    // 新增：让外界能根据位置拿到单词对象
+    public Word getWordAt(int position) {
+        return words.get(position);
     }
 
     static class WordViewHolder extends RecyclerView.ViewHolder {
