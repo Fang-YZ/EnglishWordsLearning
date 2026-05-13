@@ -43,6 +43,8 @@ dependencies {
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
     implementation libs.room.runtime
+    implementation libs.retrofit
+    implementation libs.converter.gson
     annotationProcessor libs.room.compiler
     testImplementation libs.junit
     androidTestImplementation libs.espresso.core

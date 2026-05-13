@@ -101,17 +101,75 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_sync) {
+            syncWords();
+            return true;
+        }
+
         if (id == R.id.action_settings) {
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * 使用 Retrofit 同步网络单词
+     */
+    private void syncWords() {
+        WordApiService apiService = RetrofitClient.getClient().create(WordApiService.class);
+        retrofit2.Call<java.util.List<Word>> call = apiService.getDailyWords();
+
+        android.widget.Toast.makeText(this, "正在同步...", android.widget.Toast.LENGTH_SHORT).show();
+
+        call.enqueue(new retrofit2.Callback<java.util.List<Word>>() {
+            @Override
+            public void onResponse(retrofit2.Call<java.util.List<Word>> call, retrofit2.Response<java.util.List<Word>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    java.util.List<Word> downloadedWords = response.body();
+                    
+                    // 后台存入数据库
+                    java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                        WordDao dao = AppDatabase.getDatabase(MainActivity.this).wordDao();
+                        for (Word w : downloadedWords) {
+                            dao.insert(w);
+                        }
+                        
+                        runOnUiThread(() -> {
+                            android.widget.Toast.makeText(MainActivity.this, "同步成功！", android.widget.Toast.LENGTH_SHORT).show();
+                        });
+                    });
+                } else {
+                    // 由于没有真实地址，这里通常会失败
+                    // 为了演示，我们在这里手动造几个“模拟下载”的单词
+                    mockSync();
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<java.util.List<Word>> call, Throwable t) {
+                // 网络连接失败时
+                mockSync(); 
+            }
+        });
+    }
+
+    /**
+     * 模拟同步成功（因为演示环境没有真实 API 接口）
+     */
+    private void mockSync() {
+        android.widget.Toast.makeText(this, "演示：正在从模拟网络下载...", android.widget.Toast.LENGTH_SHORT).show();
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            WordDao dao = AppDatabase.getDatabase(MainActivity.this).wordDao();
+            dao.insert(new Word("Retrofit", "一个很棒的网络库"));
+            dao.insert(new Word("JSON", "数据交换格式"));
+            
+            runOnUiThread(() -> {
+                android.widget.Toast.makeText(MainActivity.this, "模拟同步成功！", android.widget.Toast.LENGTH_SHORT).show();
+            });
+        });
     }
 
     @Override
