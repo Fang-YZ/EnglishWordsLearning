@@ -31,28 +31,34 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. 准备演示用的单词数据
-        List<Word> wordList = new ArrayList<>();
-        wordList.add(new Word("Commit", "提交 (把代码保存到仓库)"));
-        wordList.add(new Word("Variable", "变量 (存储数据的容器)"));
-        wordList.add(new Word("Interface", "接口 (连接不同部分的桥梁)"));
-        wordList.add(new Word("Fragment", "碎片 (页面的一部分)"));
-        wordList.add(new Word("Adapter", "适配器 (连接数据和视图的中间人)"));
+        AppDatabase db = AppDatabase.getDatabase(getContext());
+        WordDao wordDao = db.wordDao();
 
-        // 2. 初始化适配器
-        WordAdapter adapter = new WordAdapter(wordList, word -> {
-            // 3. 点击逻辑：将选中的单词对象封装到 Bundle 中
-            Bundle bundle = new Bundle();
-            bundle.putSerializable("selected_word", word);
-
-            // 4. 跳转到第二个页面 (SecondFragment)，并带上数据
-            NavHostFragment.findNavController(FirstFragment.this)
-                    .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
-        });
-
-        // 5. 配置 RecyclerView (设置布局管理器和适配器)
+        // 1. 设置 RecyclerView 的基本外观
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        binding.recyclerView.setAdapter(adapter);
+
+        // 2. 【核心】观察数据库的变化
+        // 只要 word_table 表里的数据一变，这个里面的代码就会自动执行！
+        wordDao.getAllWords().observe(getViewLifecycleOwner(), wordList -> {
+            // 如果数据库空空如也，我们还是在后台偷偷塞入几个演示单词
+            if (wordList.isEmpty()) {
+                java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                    wordDao.insert(new Word("Commit", "提交"));
+                    wordDao.insert(new Word("Variable", "变量"));
+                    wordDao.insert(new Word("Adapter", "适配器"));
+                });
+                return; // 插入后 LiveData 会再次触发，所以这里直接返回
+            }
+
+            // 3. 刷新列表界面
+            WordAdapter adapter = new WordAdapter(wordList, word -> {
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("selected_word", word);
+                NavHostFragment.findNavController(FirstFragment.this)
+                        .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
+            });
+            binding.recyclerView.setAdapter(adapter);
+        });
     }
 
     @Override

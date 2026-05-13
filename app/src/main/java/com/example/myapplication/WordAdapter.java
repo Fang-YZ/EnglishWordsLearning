@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
@@ -42,6 +43,13 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
 
         // B. 将数据填充到 ViewBinding 提供的控件中
         holder.binding.tvEnglish.setText(word.english); // 设置英文单词文本
+
+        // 新增逻辑：根据是否掌握来改变文字颜色
+        if (word.mastered) {
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#4CAF50")); // 绿色
+        } else {
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#333333")); // 默认灰黑色
+        }
 
         // C. 为整个条目（ItemView）设置点击监听
         holder.itemView.setOnClickListener(v -> {

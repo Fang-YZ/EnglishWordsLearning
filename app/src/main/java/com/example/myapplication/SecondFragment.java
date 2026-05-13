@@ -57,16 +57,32 @@ public class SecondFragment extends Fragment {
 
         // 3. 点击“认识”
         binding.btnKnow.setOnClickListener(v -> {
-            word.mastered = true; // 记录进度
-            Toast.makeText(getContext(), "太棒了！记住了 +1", Toast.LENGTH_SHORT).show();
-            NavHostFragment.findNavController(this).popBackStack(); // 返回列表
+            word.mastered = true; 
+            
+            // 后台更新数据库
+            java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase.getDatabase(getContext()).wordDao().update(word);
+                
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "已标记为：认识", Toast.LENGTH_SHORT).show();
+                    androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack();
+                });
+            });
         });
 
         // 4. 点击“不认识”
         binding.btnDontKnow.setOnClickListener(v -> {
             word.mastered = false;
-            Toast.makeText(getContext(), "没关系，再接再厉！", Toast.LENGTH_SHORT).show();
-            NavHostFragment.findNavController(this).popBackStack(); // 返回列表
+
+            // 后台更新数据库
+            java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase.getDatabase(getContext()).wordDao().update(word);
+
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "已标记为：不认识", Toast.LENGTH_SHORT).show();
+                    androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack();
+                });
+            });
         });
     }
 

@@ -48,13 +48,47 @@ public class MainActivity extends AppCompatActivity {
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
-        binding.fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAnchorView(R.id.fab)
-                        .setAction("Action", null).show();
+        binding.fab.setOnClickListener(view -> {
+            // 1. 加载自定义布局
+            android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
+            android.widget.EditText etEnglish = dialogView.findViewById(R.id.et_english);
+            android.widget.EditText etChinese = dialogView.findViewById(R.id.et_chinese);
+
+            // 2. 构建对话框
+            androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("添加新单词")
+                    .setView(dialogView)
+                    .setPositiveButton("添加", (d, which) -> {
+                        String english = etEnglish.getText().toString().trim();
+                        String chinese = etChinese.getText().toString().trim();
+                        
+                        if (!english.isEmpty() && !chinese.isEmpty()) {
+                            // 后台插入数据库
+                            java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                                AppDatabase.getDatabase(this).wordDao().insert(new Word(english, chinese));
+                            });
+                        }
+                    })
+                    .setNegativeButton("取消", null)
+                    .create(); // 使用 create() 而不是直接 .show()
+
+            // 3. 【核心优化】解决中文输入法不弹出的问题
+            // 必须在 dialog.show() 之前或之后立即设置以下属性
+            dialog.setOnShowListener(d -> {
+                // 自动弹出软键盘
+                etEnglish.requestFocus();
+                android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(etEnglish, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+
+            // 强制对话框窗口允许显示输入法
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
             }
+
+            dialog.show();
         });
     }
 
