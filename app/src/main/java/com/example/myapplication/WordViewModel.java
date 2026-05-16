@@ -39,4 +39,8 @@ public class WordViewModel extends AndroidViewModel {
     public void delete(Word word) {
         executorService.execute(() -> wordDao.delete(word));
     }
+
+    public void deleteAll() {
+        executorService.execute(wordDao::deleteAll);
+    }
 }

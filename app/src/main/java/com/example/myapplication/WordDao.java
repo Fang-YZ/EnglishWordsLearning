@@ -28,4 +28,7 @@ public interface WordDao {
     // 简易算法：优先获取学习次数少的单词
     @Query("SELECT * FROM word_table ORDER BY learnCount ASC, id DESC")
     androidx.lifecycle.LiveData<List<Word>> getWordsByReviewPriority();
+
+    @Query("DELETE FROM word_table")
+    void deleteAll();
 }

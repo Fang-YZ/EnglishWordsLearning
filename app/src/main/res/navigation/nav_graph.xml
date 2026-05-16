@@ -3,7 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/LoginFragment">
+
+    <fragment
+        android:id="@+id/LoginFragment"
+        android:name="com.example.myapplication.LoginFragment"
+        android:label="登录"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_LoginFragment_to_FirstFragment"
+            app:destination="@id/FirstFragment"
+            app:popUpTo="@id/LoginFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_LoginFragment_to_RegisterFragment"
+            app:destination="@id/RegisterFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/RegisterFragment"
+        android:name="com.example.myapplication.RegisterFragment"
+        android:label="注册"
+        tools:layout="@layout/fragment_register" />
 
     <fragment
         android:id="@+id/FirstFragment"

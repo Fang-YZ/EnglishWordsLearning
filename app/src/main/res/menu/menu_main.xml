@@ -6,10 +6,20 @@
         android:id="@+id/action_sync"
         android:orderInCategory="90"
         android:title="获取每日单词"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_import"
+        android:orderInCategory="95"
+        android:title="从文件导入单词"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_clear_all"
+        android:orderInCategory="100"
+        android:title="清空词库"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"
-        android:orderInCategory="100"
+        android:orderInCategory="110"
         android:title="@string/action_settings"
         app:showAsAction="never" />
 </menu>
