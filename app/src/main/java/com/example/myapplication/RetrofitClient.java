@@ -4,7 +4,10 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    private static final String BASE_URL = "https://example.com/api/"; // 替换为真实的 API 基准地址
+    // 这里的地址根据你的情况修改：
+    // 1. 如果是公网服务器： "https://api.yourdomain.com/"
+    // 2. 如果是本地测试（模拟器访问电脑）： "http://10.0.2.2:8080/" 
+    private static final String BASE_URL = "http://10.0.2.2:8080/";
     private static Retrofit retrofit = null;
 
     public static Retrofit getClient() {

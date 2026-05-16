@@ -72,7 +72,6 @@ public class FirstFragment extends Fragment {
                     wordDao.insert(new Word("Variable", "变量"));
                     wordDao.insert(new Word("Adapter", "适配器"));
                 });
-                return;
             }
 
             // 刷新列表界面

@@ -5,12 +5,12 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {Word.class}, version = 1)
+@Database(entities = {Word.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract WordDao wordDao();
 
-    private static AppDatabase INSTANCE;
+    private static volatile AppDatabase INSTANCE;
 
     // 单例模式：确保整个 App 只有一个数据库连接，节省资源
     public static AppDatabase getDatabase(final Context context) {
@@ -19,6 +19,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "word_database")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
