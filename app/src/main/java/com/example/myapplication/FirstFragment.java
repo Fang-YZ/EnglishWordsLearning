@@ -87,7 +87,8 @@ public class FirstFragment extends Fragment {
         // 开启新的观察
         androidx.lifecycle.LiveData<java.util.List<Word>> liveData;
         if (query.isEmpty()) {
-            liveData = wordDao.getAllWords();
+            // 使用复习优先算法排序：学习次数少的排在前面
+            liveData = wordDao.getWordsByReviewPriority();
         } else {
             liveData = wordDao.searchWords("%" + query + "%");
         }
@@ -119,7 +120,51 @@ public class FirstFragment extends Fragment {
                 }
             });
             binding.recyclerView.setAdapter(adapter);
+
+            // 【新增】更新进度条逻辑
+            updateProgress(wordList);
+
+            // 【新增】随机测验逻辑
+            binding.btnStartQuiz.setOnClickListener(v -> {
+                // 筛选出不认识的词（红色）
+                java.util.List<Word> unmasteredWords = new java.util.ArrayList<>();
+                for (Word w : wordList) {
+                    if (!w.mastered) unmasteredWords.add(w);
+                }
+
+                if (unmasteredWords.isEmpty()) {
+                    android.widget.Toast.makeText(getContext(), "太棒了！所有单词都已掌握", android.widget.Toast.LENGTH_SHORT).show();
+                } else {
+                    // 随机挑一个
+                    java.util.Collections.shuffle(unmasteredWords);
+                    Word randomWord = unmasteredWords.get(0);
+                    
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("selected_word", randomWord);
+                    NavHostFragment.findNavController(FirstFragment.this)
+                            .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
+                }
+            });
         });
+    }
+
+    /**
+     * 更新进度条和统计文字
+     */
+    private void updateProgress(java.util.List<Word> wordList) {
+        int total = wordList.size();
+        int mastered = 0;
+        for (Word w : wordList) {
+            if (w.mastered) mastered++;
+        }
+
+        binding.tvProgressText.setText("已掌握 " + mastered + " / 总词库 " + total);
+        if (total > 0) {
+            int progress = (mastered * 100) / total;
+            binding.pbLearning.setProgress(progress);
+        } else {
+            binding.pbLearning.setProgress(0);
+        }
     }
 
     private void showEditDialog(Word word) {

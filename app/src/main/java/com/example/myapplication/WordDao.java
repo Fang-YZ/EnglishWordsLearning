@@ -24,4 +24,8 @@ public interface WordDao {
 
     @Query("SELECT * FROM word_table WHERE english LIKE :searchQuery OR chinese LIKE :searchQuery ORDER BY id DESC")
     androidx.lifecycle.LiveData<List<Word>> searchWords(String searchQuery);
+
+    // 简易算法：优先获取学习次数少的单词
+    @Query("SELECT * FROM word_table ORDER BY learnCount ASC, id DESC")
+    androidx.lifecycle.LiveData<List<Word>> getWordsByReviewPriority();
 }

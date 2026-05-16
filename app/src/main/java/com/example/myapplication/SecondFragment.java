@@ -69,6 +69,7 @@ public class SecondFragment extends Fragment {
         // 3. 点击“认识”
         binding.btnKnow.setOnClickListener(v -> {
             word.mastered = true; 
+            word.learnCount++; // 学习次数 +1
             
             // 后台更新数据库
             java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
