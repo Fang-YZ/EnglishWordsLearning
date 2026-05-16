@@ -37,7 +37,7 @@ public class FirstFragment extends Fragment {
         // 1. 设置 RecyclerView 的基本外观
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // 2. 初始化侧滑删除（只初始化一次，放在 observe 外面）
+        // 2. 初始化侧滑删除
         new androidx.recyclerview.widget.ItemTouchHelper(new androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(0,
                 androidx.recyclerview.widget.ItemTouchHelper.LEFT | androidx.recyclerview.widget.ItemTouchHelper.RIGHT) {
             @Override
@@ -49,32 +49,59 @@ public class FirstFragment extends Fragment {
 
             @Override
             public void onSwiped(@NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder viewHolder, int direction) {
-                // 通过适配器拿到被滑动的单词
                 WordAdapter adapter = (WordAdapter) binding.recyclerView.getAdapter();
                 if (adapter != null) {
                     int position = viewHolder.getAdapterPosition();
                     Word wordToDelete = adapter.getWordAt(position);
-
-                    // 执行数据库删除
-                    java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-                        wordDao.delete(wordToDelete);
-                    });
+                    java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> wordDao.delete(wordToDelete));
                     android.widget.Toast.makeText(getContext(), "单词已删除", android.widget.Toast.LENGTH_SHORT).show();
                 }
             }
         }).attachToRecyclerView(binding.recyclerView);
 
-        // 3. 【核心】观察数据库的变化
-        wordDao.getAllWords().observe(getViewLifecycleOwner(), wordList -> {
-            if (wordList.isEmpty()) {
+        // 3. 【核心】设置搜索监听逻辑
+        binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) { return false; }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // 当搜索框文字变化时，重新加载数据
+                observeWords(wordDao, newText);
+                return true;
+            }
+        });
+
+        // 初始加载全部单词
+        observeWords(wordDao, "");
+    }
+
+    /**
+     * 根据搜索关键词观察数据变化
+     */
+    private void observeWords(WordDao wordDao, String query) {
+        // 先移除旧的观察者，防止数据重叠
+        wordDao.getAllWords().removeObservers(getViewLifecycleOwner());
+        wordDao.searchWords("%" + query + "%").removeObservers(getViewLifecycleOwner());
+
+        // 开启新的观察
+        androidx.lifecycle.LiveData<java.util.List<Word>> liveData;
+        if (query.isEmpty()) {
+            liveData = wordDao.getAllWords();
+        } else {
+            liveData = wordDao.searchWords("%" + query + "%");
+        }
+
+        liveData.observe(getViewLifecycleOwner(), wordList -> {
+            if (wordList.isEmpty() && query.isEmpty()) {
                 java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
                     wordDao.insert(new Word("Commit", "提交"));
                     wordDao.insert(new Word("Variable", "变量"));
                     wordDao.insert(new Word("Adapter", "适配器"));
                 });
+                return;
             }
 
-            // 刷新列表界面
             WordAdapter adapter = new WordAdapter(wordList, word -> {
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("selected_word", word);
