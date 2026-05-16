@@ -135,12 +135,14 @@ public class FirstFragment extends Fragment {
                 if (unmasteredWords.isEmpty()) {
                     android.widget.Toast.makeText(getContext(), "太棒了！所有单词都已掌握", android.widget.Toast.LENGTH_SHORT).show();
                 } else {
-                    // 随机挑一个
+                    // 随机挑出最多 10 个词组成测验集
                     java.util.Collections.shuffle(unmasteredWords);
-                    Word randomWord = unmasteredWords.get(0);
+                    int quizSize = Math.min(10, unmasteredWords.size());
+                    java.util.ArrayList<Word> quizList = new java.util.ArrayList<>(unmasteredWords.subList(0, quizSize));
                     
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("selected_word", randomWord);
+                    bundle.putSerializable("quiz_list", quizList);
+
                     NavHostFragment.findNavController(FirstFragment.this)
                             .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
                 }
