@@ -93,23 +93,59 @@ public class FirstFragment extends Fragment {
         }
 
         liveData.observe(getViewLifecycleOwner(), wordList -> {
-            if (wordList.isEmpty() && query.isEmpty()) {
-                java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-                    wordDao.insert(new Word("Commit", "提交"));
-                    wordDao.insert(new Word("Variable", "变量"));
-                    wordDao.insert(new Word("Adapter", "适配器"));
-                });
+            if (wordList.isEmpty()) {
+                if (query.isEmpty()) {
+                    binding.layoutEmpty.setVisibility(View.VISIBLE);
+                    binding.recyclerView.setVisibility(View.GONE);
+                }
                 return;
+            } else {
+                binding.layoutEmpty.setVisibility(View.GONE);
+                binding.recyclerView.setVisibility(View.VISIBLE);
             }
 
-            WordAdapter adapter = new WordAdapter(wordList, word -> {
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("selected_word", word);
-                NavHostFragment.findNavController(FirstFragment.this)
-                        .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
+            WordAdapter adapter = new WordAdapter(wordList, new WordAdapter.OnItemClickListener() {
+                @Override
+                public void onItemClick(Word word) {
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("selected_word", word);
+                    NavHostFragment.findNavController(FirstFragment.this)
+                            .navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
+                }
+
+                @Override
+                public void onItemLongClick(Word word) {
+                    showEditDialog(word);
+                }
             });
             binding.recyclerView.setAdapter(adapter);
         });
+    }
+
+    private void showEditDialog(Word word) {
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
+        android.widget.EditText etEnglish = dialogView.findViewById(R.id.et_english);
+        android.widget.EditText etChinese = dialogView.findViewById(R.id.et_chinese);
+
+        etEnglish.setText(word.english);
+        etChinese.setText(word.chinese);
+
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                .setTitle("修改单词")
+                .setView(dialogView)
+                .setPositiveButton("保存", (d, which) -> {
+                    String eng = etEnglish.getText().toString().trim();
+                    String chi = etChinese.getText().toString().trim();
+                    if (!eng.isEmpty() && !chi.isEmpty()) {
+                        word.english = eng;
+                        word.chinese = chi;
+                        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                            AppDatabase.getDatabase(getContext()).wordDao().update(word);
+                        });
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     @Override

@@ -15,6 +15,8 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
     // 定义点击接口
     public interface OnItemClickListener {
         void onItemClick(Word word);
+        // 新增：长按接口
+        void onItemLongClick(Word word);
     }
 
     public WordAdapter(List<Word> words, OnItemClickListener listener) {
@@ -57,6 +59,14 @@ public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder
                 // 当这一行被点击时，通知外界（Fragment）哪个单词被选中了
                 listener.onItemClick(word);
             }
+        });
+
+        // 新增：长按监听
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null) {
+                listener.onItemLongClick(word);
+            }
+            return true;
         });
     }
 
