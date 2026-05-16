@@ -71,6 +71,29 @@ public class SecondFragment extends Fragment {
         // 点击喇叭播放读音
         binding.btnPlayAudio.setOnClickListener(v -> playAudio(binding.tvDetailEnglish.getText().toString()));
 
+        // 【新增】点击垃圾桶图标删除当前单词
+        binding.btnDeleteWord.setOnClickListener(v -> {
+            Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
+            new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                    .setTitle("确认删除")
+                    .setMessage("确定要从词库中永久删除单词 \"" + currentWord.english + "\" 吗？")
+                    .setPositiveButton("删除", (d, which) -> {
+                        wordViewModel.delete(currentWord);
+                        Toast.makeText(getContext(), "已删除", Toast.LENGTH_SHORT).show();
+                        
+                        // 如果是测验模式，跳到下一个；如果是单词模式，返回列表
+                        if (quizList != null && currentIndex < quizList.size() - 1) {
+                            quizList.remove(currentIndex);
+                            updateQuizProgress();
+                            showWord(quizList.get(currentIndex));
+                        } else {
+                            androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack();
+                        }
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        });
+
         // 2. 点击“看答案”逻辑
         binding.btnShowAnswer.setOnClickListener(v -> {
             binding.tvDetailChinese.setVisibility(View.VISIBLE);
