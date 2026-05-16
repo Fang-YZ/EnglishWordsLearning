@@ -4,85 +4,85 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.databinding.ItemWordBinding;
-import java.util.List;
 
-public class WordAdapter extends RecyclerView.Adapter<WordAdapter.WordViewHolder> {
-    private List<Word> words;
-    private OnItemClickListener listener;
+/**
+ * 升级版适配器：使用 ListAdapter 和 DiffUtil
+ * ListAdapter 会自动处理数据的差异对比，只刷新变动的条目，并自带动画。
+ */
+public class WordAdapter extends ListAdapter<Word, WordAdapter.WordViewHolder> {
 
-    // 定义点击接口
+    private final OnItemClickListener listener;
+
     public interface OnItemClickListener {
         void onItemClick(Word word);
-        // 新增：长按接口
         void onItemLongClick(Word word);
     }
 
-    public WordAdapter(List<Word> words, OnItemClickListener listener) {
-        this.words = words;
+    // DiffUtil.ItemCallback 是对比算法的核心：告诉系统如何判断两个单词是否相同
+    private static final DiffUtil.ItemCallback<Word> DIFF_CALLBACK = new DiffUtil.ItemCallback<Word>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull Word oldItem, @NonNull Word newItem) {
+            // 如果 ID 相同，说明是同一个单词条目
+            return oldItem.id == newItem.id;
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull Word oldItem, @NonNull Word newItem) {
+            // 如果内容（拼写、翻译、掌握状态）都一样，说明完全不需要刷新
+            return oldItem.english.equals(newItem.english) &&
+                    oldItem.chinese.equals(newItem.chinese) &&
+                    oldItem.mastered == newItem.mastered;
+        }
+    };
+
+    public WordAdapter(OnItemClickListener listener) {
+        super(DIFF_CALLBACK);
         this.listener = listener;
     }
 
     @NonNull
     @Override
     public WordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // A. 加载 item_word.xml 布局并生成 Binding 对象
         ItemWordBinding binding = ItemWordBinding.inflate(
-                LayoutInflater.from(parent.getContext()), // 获取加载器的上下文
-                parent,                                   // 指定父容器
-                false                                     // 不要立即挂载到父容器上
-        );
-
-        // B. 将生成的 Binding 对象交给“握持者（ViewHolder）”并返回
+                LayoutInflater.from(parent.getContext()), parent, false);
         return new WordViewHolder(binding);
     }
 
     @Override
     public void onBindViewHolder(@NonNull WordViewHolder holder, int position) {
-        // A. 根据当前位置（position）从列表中拿到具体的单词数据对象
-        Word word = words.get(position);
+        // 使用 getItem(position) 拿到当前数据
+        Word word = getItem(position);
 
-        // B. 将数据填充到 ViewBinding 提供的控件中
-        holder.binding.tvEnglish.setText(word.english); 
+        holder.binding.tvEnglish.setText(word.english);
 
-        // 逻辑更新：根据掌握情况区分颜色
+        // 颜色逻辑
         if (word.mastered) {
-            holder.binding.tvEnglish.setTextColor(Color.parseColor("#4CAF50")); // 认识的词：绿色
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#4CAF50")); // 绿色
         } else {
-            holder.binding.tvEnglish.setTextColor(Color.parseColor("#F44336")); // 不认识/新词：红色
+            holder.binding.tvEnglish.setTextColor(Color.parseColor("#F44336")); // 红色
         }
 
-        // C. 为整个条目（ItemView）设置点击监听
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                // 当这一行被点击时，通知外界（Fragment）哪个单词被选中了
-                listener.onItemClick(word);
-            }
+            if (listener != null) listener.onItemClick(word);
         });
 
-        // 新增：长按监听
         holder.itemView.setOnLongClickListener(v -> {
-            if (listener != null) {
-                listener.onItemLongClick(word);
-            }
+            if (listener != null) listener.onItemLongClick(word);
             return true;
         });
     }
 
-    @Override
-    public int getItemCount() {
-        // 告诉系统：数据列表里有多少个单词，界面就显示多少行
-        return words != null ? words.size() : 0;
-    }
-
-    // 新增：让外界能根据位置拿到单词对象
+    // 依然保留这个方法供侧滑删除使用
     public Word getWordAt(int position) {
-        return words.get(position);
+        return getItem(position);
     }
 
     static class WordViewHolder extends RecyclerView.ViewHolder {
-        ItemWordBinding binding;
+        final ItemWordBinding binding;
         WordViewHolder(ItemWordBinding binding) {
             super(binding.getRoot());
             this.binding = binding;

@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="Apple"
-            android:textColor="#333333"
+            android:textColor="?android:attr/textColorPrimary"
             android:textSize="33sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"

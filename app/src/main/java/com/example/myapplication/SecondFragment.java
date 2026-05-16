@@ -19,6 +19,7 @@ import java.util.ArrayList;
 public class SecondFragment extends Fragment {
 
     private FragmentSecondBinding binding;
+    private WordViewModel wordViewModel;
     private MediaPlayer mediaPlayer;
     private ArrayList<Word> quizList;
     private int currentIndex = 0;
@@ -35,6 +36,9 @@ public class SecondFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // 初始化 ViewModel（共享 Activity 作用域，确保数据同步）
+        wordViewModel = new androidx.lifecycle.ViewModelProvider(requireActivity()).get(WordViewModel.class);
 
         if (getArguments() == null) {
             Toast.makeText(getContext(), "数据出错了", Toast.LENGTH_SHORT).show();
@@ -61,7 +65,7 @@ public class SecondFragment extends Fragment {
             return;
         }
 
-        // 显示初始单词
+        // 显示单词内容
         showWord(word);
 
         // 点击喇叭播放读音
@@ -76,7 +80,7 @@ public class SecondFragment extends Fragment {
 
         // 3. 点击“认识”
         binding.btnKnow.setOnClickListener(v -> {
-            Word currentWord = (quizList != null) ? quizList.get(currentIndex) : (Word) getArguments().getSerializable("selected_word");
+            Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
                 currentWord.mastered = true;
                 currentWord.learnCount++;
@@ -86,7 +90,7 @@ public class SecondFragment extends Fragment {
 
         // 4. 点击“不认识”
         binding.btnDontKnow.setOnClickListener(v -> {
-            Word currentWord = (quizList != null) ? quizList.get(currentIndex) : (Word) getArguments().getSerializable("selected_word");
+            Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
                 currentWord.mastered = false;
                 handleWordAction(currentWord, "已标记为：不认识");
@@ -119,23 +123,18 @@ public class SecondFragment extends Fragment {
      * 处理单词操作并自动切换到下一个
      */
     private void handleWordAction(Word word, String toastMsg) {
-        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase.getDatabase(getContext()).wordDao().update(word);
-            
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    Toast.makeText(getContext(), toastMsg, Toast.LENGTH_SHORT).show();
-                    
-                    if (quizList != null && currentIndex < quizList.size() - 1) {
-                        currentIndex++;
-                        updateQuizProgress();
-                        showWord(quizList.get(currentIndex));
-                    } else {
-                        NavHostFragment.findNavController(this).popBackStack();
-                    }
-                });
-            }
-        });
+        // 使用 ViewModel 更新，逻辑更专业
+        wordViewModel.update(word);
+        
+        Toast.makeText(getContext(), toastMsg, Toast.LENGTH_SHORT).show();
+        
+        if (quizList != null && currentIndex < quizList.size() - 1) {
+            currentIndex++;
+            updateQuizProgress();
+            showWord(quizList.get(currentIndex));
+        } else {
+            NavHostFragment.findNavController(this).popBackStack();
+        }
     }
 
     private void playAudio(String wordText) {
