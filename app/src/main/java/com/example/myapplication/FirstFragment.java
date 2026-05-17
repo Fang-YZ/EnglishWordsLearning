@@ -129,6 +129,9 @@ public class FirstFragment extends Fragment {
                 if (id == R.id.sort_priority) {
                     wordViewModel.setSortOrder(0);
                     return true;
+                } else if (id == R.id.sort_ebbinghaus) {
+                    wordViewModel.setSortOrder(3);
+                    return true;
                 } else if (id == R.id.sort_az) {
                     wordViewModel.setSortOrder(1);
                     return true;

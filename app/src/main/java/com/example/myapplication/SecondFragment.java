@@ -96,20 +96,60 @@ public class SecondFragment extends Fragment {
         binding.btnKnow.setOnClickListener(v -> {
             Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
-                currentWord.mastered = true;
-                currentWord.learnCount++;
+                // 艾宾浩斯核心逻辑：升级复习阶段
+                applyEbbinghaus(currentWord, true);
+                
                 if (quizList != null) correctCount++;
-                handleWordAction(currentWord, "已标记为：认识");
+                handleWordAction(currentWord, "已掌握，已推后复习时间");
             }
         });
 
         binding.btnDontKnow.setOnClickListener(v -> {
             Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
-                currentWord.mastered = false;
-                handleWordAction(currentWord, "已标记为：不认识");
+                // 艾宾浩斯核心逻辑：重置复习阶段
+                applyEbbinghaus(currentWord, false);
+                
+                handleWordAction(currentWord, "没关系，下次再努力");
             }
         });
+    }
+
+    /**
+     * 艾宾浩斯遗忘曲线算法实现
+     * 复习周期：5分钟, 30分钟, 12小时, 1天, 2天, 4天, 7天, 15天
+     */
+    private void applyEbbinghaus(Word word, boolean recognize) {
+        word.learnCount++;
+        
+        if (recognize) {
+            // 如果认识，阶段 +1
+            word.reviewStage++;
+            // 如果到了 8 阶段，标记为彻底掌握
+            if (word.reviewStage >= 8) {
+                word.mastered = true;
+            }
+        } else {
+            // 如果不认识，惩罚：阶段归零
+            word.reviewStage = 0;
+            word.mastered = false;
+        }
+
+        // 计算下次复习的时间间隔（毫秒）
+        long interval;
+        switch (word.reviewStage) {
+            case 1: interval = 5 * 60 * 1000L; break;          // 5分钟
+            case 2: interval = 30 * 60 * 1000L; break;         // 30分钟
+            case 3: interval = 12 * 60 * 60 * 1000L; break;    // 12小时
+            case 4: interval = 24 * 60 * 60 * 1000L; break;    // 1天
+            case 5: interval = 2 * 24 * 60 * 60 * 1000L; break; // 2天
+            case 6: interval = 4 * 24 * 60 * 60 * 1000L; break; // 4天
+            case 7: interval = 7 * 24 * 60 * 60 * 1000L; break; // 7天
+            case 8: interval = 15 * 24 * 60 * 60 * 1000L; break;// 15天
+            default: interval = 0; // 0阶段立即复习
+        }
+        
+        word.nextReviewTime = System.currentTimeMillis() + interval;
     }
 
     private void showWord(Word word) {

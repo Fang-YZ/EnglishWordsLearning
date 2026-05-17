@@ -31,6 +31,7 @@ public class WordRepository {
         switch (sortType) {
             case 1: return wordDao.getWordsAlphabetical();
             case 2: return wordDao.getWordsNewest();
+            case 3: return wordDao.getDueReviewWords(System.currentTimeMillis()); // 艾宾浩斯
             default: return wordDao.getWordsByReviewPriority();
         }
     }

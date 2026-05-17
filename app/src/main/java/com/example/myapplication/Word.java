@@ -17,7 +17,9 @@ public class Word implements Serializable {
     public String english;
     public String chinese;
     public boolean mastered = false;
-    public int learnCount = 0; // 新增：学习次数，用于简易复习算法
+    public int learnCount = 0;
+    public int reviewStage = 0; // 新增：复习阶段 (0-7)
+    public long nextReviewTime = 0; // 新增：下次复习的时间戳 (毫秒)
 
     public Word(String english, String chinese) {
         this.english = english;

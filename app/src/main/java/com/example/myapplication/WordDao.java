@@ -29,6 +29,14 @@ public interface WordDao {
     @Query("SELECT * FROM word_table ORDER BY learnCount ASC, id DESC")
     androidx.lifecycle.LiveData<List<Word>> getWordsByReviewPriority();
 
+    // 艾宾浩斯：获取今日待复习的单词 (下次复习时间小于等于现在)
+    @Query("SELECT * FROM word_table WHERE mastered = 0 AND nextReviewTime <= :currentTime ORDER BY nextReviewTime ASC")
+    androidx.lifecycle.LiveData<List<Word>> getDueReviewWords(long currentTime);
+    
+    // 艾宾浩斯：获取所有待复习词的数量
+    @Query("SELECT COUNT(*) FROM word_table WHERE mastered = 0 AND nextReviewTime <= :currentTime")
+    int getDueReviewCount(long currentTime);
+
     // 字母排序
     @Query("SELECT * FROM word_table ORDER BY english ASC")
     androidx.lifecycle.LiveData<List<Word>> getWordsAlphabetical();
