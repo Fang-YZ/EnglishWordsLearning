@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <ImageView
+        android:id="@+id/iv_medal"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@android:drawable/btn_star_big_on"
+        app:tint="#FFD700"
+        android:contentDescription="奖章" />
+
+    <TextView
+        android:id="@+id/tv_result_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="测验完成！"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_score_detail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="正确率：80%\n掌握单词：8 / 10"
+        android:gravity="center"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="16sp"
+        android:lineSpacingExtra="4dp" />
+
+</LinearLayout>

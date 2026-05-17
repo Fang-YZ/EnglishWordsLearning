@@ -23,6 +23,7 @@ public class SecondFragment extends Fragment {
     private MediaPlayer mediaPlayer;
     private ArrayList<Word> quizList;
     private int currentIndex = 0;
+    private int correctCount = 0; // 记录认识的数量
 
     @Override
     public View onCreateView(
@@ -37,7 +38,7 @@ public class SecondFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 初始化 ViewModel（共享 Activity 作用域，确保数据同步）
+        // 初始化 ViewModel
         wordViewModel = new androidx.lifecycle.ViewModelProvider(requireActivity()).get(WordViewModel.class);
 
         if (getArguments() == null) {
@@ -45,17 +46,15 @@ public class SecondFragment extends Fragment {
             return;
         }
 
-        // 检查是单个单词模式还是连续测验模式
+        // 检查模式
         quizList = (ArrayList<Word>) getArguments().getSerializable("quiz_list");
         
         Word word;
         if (quizList != null && !quizList.isEmpty()) {
-            // 测验模式
             word = quizList.get(currentIndex);
             binding.tvQuizProgress.setVisibility(View.VISIBLE);
             updateQuizProgress();
         } else {
-            // 单个查看模式
             word = (Word) getArguments().getSerializable("selected_word");
             binding.tvQuizProgress.setVisibility(View.GONE);
         }
@@ -65,53 +64,45 @@ public class SecondFragment extends Fragment {
             return;
         }
 
-        // 显示单词内容
         showWord(word);
 
-        // 点击喇叭播放读音
         binding.btnPlayAudio.setOnClickListener(v -> playAudio(binding.tvDetailEnglish.getText().toString()));
 
-        // 【新增】点击垃圾桶图标删除当前单词
         binding.btnDeleteWord.setOnClickListener(v -> {
             Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             new androidx.appcompat.app.AlertDialog.Builder(getContext())
                     .setTitle("确认删除")
-                    .setMessage("确定要从词库中永久删除单词 \"" + currentWord.english + "\" 吗？")
+                    .setMessage("确定要删除吗？")
                     .setPositiveButton("删除", (d, which) -> {
                         wordViewModel.delete(currentWord);
-                        Toast.makeText(getContext(), "已删除", Toast.LENGTH_SHORT).show();
-                        
-                        // 如果是测验模式，跳到下一个；如果是单词模式，返回列表
                         if (quizList != null && currentIndex < quizList.size() - 1) {
                             quizList.remove(currentIndex);
                             updateQuizProgress();
                             showWord(quizList.get(currentIndex));
                         } else {
-                            androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack();
+                            NavHostFragment.findNavController(this).popBackStack();
                         }
                     })
                     .setNegativeButton("取消", null)
                     .show();
         });
 
-        // 2. 点击“看答案”逻辑
         binding.btnShowAnswer.setOnClickListener(v -> {
             binding.tvDetailChinese.setVisibility(View.VISIBLE);
             binding.btnShowAnswer.setVisibility(View.GONE);
             binding.layoutQuizActions.setVisibility(View.VISIBLE);
         });
 
-        // 3. 点击“认识”
         binding.btnKnow.setOnClickListener(v -> {
             Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
                 currentWord.mastered = true;
                 currentWord.learnCount++;
+                if (quizList != null) correctCount++;
                 handleWordAction(currentWord, "已标记为：认识");
             }
         });
 
-        // 4. 点击“不认识”
         binding.btnDontKnow.setOnClickListener(v -> {
             Word currentWord = (quizList != null) ? quizList.get(currentIndex) : word;
             if (currentWord != null) {
@@ -121,9 +112,6 @@ public class SecondFragment extends Fragment {
         });
     }
 
-    /**
-     * 显示单词的内容，并处理 UI 状态
-     */
     private void showWord(Word word) {
         binding.tvDetailEnglish.setText(word.english);
         binding.tvDetailChinese.setText(word.chinese);
@@ -133,22 +121,14 @@ public class SecondFragment extends Fragment {
         playAudio(word.english);
     }
 
-    /**
-     * 更新顶部进度（如 3 / 10）
-     */
     private void updateQuizProgress() {
         if (quizList != null) {
             binding.tvQuizProgress.setText((currentIndex + 1) + " / " + quizList.size());
         }
     }
 
-    /**
-     * 处理单词操作并自动切换到下一个
-     */
     private void handleWordAction(Word word, String toastMsg) {
-        // 使用 ViewModel 更新，逻辑更专业
         wordViewModel.update(word);
-        
         Toast.makeText(getContext(), toastMsg, Toast.LENGTH_SHORT).show();
         
         if (quizList != null && currentIndex < quizList.size() - 1) {
@@ -156,21 +136,36 @@ public class SecondFragment extends Fragment {
             updateQuizProgress();
             showWord(quizList.get(currentIndex));
         } else {
-            NavHostFragment.findNavController(this).popBackStack();
+            if (quizList != null) {
+                showResultDialog();
+            } else {
+                NavHostFragment.findNavController(this).popBackStack();
+            }
         }
+    }
+
+    private void showResultDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_quiz_result, null);
+        android.widget.TextView tvScore = dialogView.findViewById(R.id.tv_score_detail);
+        int total = quizList.size();
+        int percent = (total > 0) ? (correctCount * 100) / total : 0;
+        tvScore.setText("正确率：" + percent + "%\n本次掌握：" + correctCount + " / " + total);
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .setCancelable(false)
+                .setPositiveButton("我知道了", (d, w) -> NavHostFragment.findNavController(this).popBackStack())
+                .show();
     }
 
     private void playAudio(String wordText) {
         String audioUrl = "https://dict.youdao.com/dictvoice?audio=" + wordText + "&type=1";
         try {
-            if (mediaPlayer != null) {
-                mediaPlayer.release();
-            }
+            if (mediaPlayer != null) mediaPlayer.release();
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .build());
+                    .setUsage(AudioAttributes.USAGE_MEDIA).build());
             mediaPlayer.setDataSource(audioUrl);
             mediaPlayer.prepareAsync();
             mediaPlayer.setOnPreparedListener(MediaPlayer::start);
