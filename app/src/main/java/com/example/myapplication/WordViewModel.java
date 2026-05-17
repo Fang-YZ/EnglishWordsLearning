@@ -4,60 +4,67 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import retrofit2.Callback;
 
+/**
+ * ViewModel 升级版：通过 Repository 获取数据
+ * 遵循 MVVM 架构
+ */
 public class WordViewModel extends AndroidViewModel {
 
-    private final WordDao wordDao;
-    private final ExecutorService executorService;
+    private final WordRepository repository;
+    private final MutableLiveData<String> searchQuery = new MutableLiveData<>("");
+    private final MutableLiveData<Integer> sortOrder = new MutableLiveData<>(0);
+    private final LiveData<List<Word>> words;
 
     public WordViewModel(@NonNull Application application) {
         super(application);
-        AppDatabase db = AppDatabase.getDatabase(application);
-        wordDao = db.wordDao();
-        executorService = Executors.newFixedThreadPool(4);
+        repository = new WordRepository(application);
+        
+        // 核心优化：动态监听搜索和排序的变化
+        words = Transformations.switchMap(searchQuery, query -> {
+            if (query == null || query.isEmpty()) {
+                return Transformations.switchMap(sortOrder, order -> 
+                    repository.getWordsSorted(order)
+                );
+            } else {
+                return repository.searchWords(query);
+            }
+        });
     }
 
     public LiveData<List<Word>> getAllWords() {
-        return wordDao.getWordsByReviewPriority();
+        return words;
     }
 
-    /**
-     * 根据排序类型获取单词
-     * 0: 学习优先级, 1: 字母 A-Z, 2: 最新添加
-     */
-    public LiveData<List<Word>> getWordsSorted(int sortType) {
-        switch (sortType) {
-            case 1: return wordDao.getWordsAlphabetical();
-            case 2: return wordDao.getWordsNewest();
-            default: return wordDao.getWordsByReviewPriority();
-        }
+    public void setSearchQuery(String query) {
+        searchQuery.setValue(query);
     }
 
-    public LiveData<List<Word>> searchWords(String query) {
-        return wordDao.searchWords("%" + query + "%");
-    }
-
-    public void syncFromNetwork(retrofit2.Callback<List<Word>> callback) {
-        WordApiService apiService = RetrofitClient.getClient().create(WordApiService.class);
-        apiService.getDailyWords().enqueue(callback);
+    public void setSortOrder(int order) {
+        sortOrder.setValue(order);
     }
 
     public void insert(Word word) {
-        executorService.execute(() -> wordDao.insert(word));
+        repository.insert(word);
     }
 
     public void update(Word word) {
-        executorService.execute(() -> wordDao.update(word));
+        repository.update(word);
     }
 
     public void delete(Word word) {
-        executorService.execute(() -> wordDao.delete(word));
+        repository.delete(word);
     }
 
     public void deleteAll() {
-        executorService.execute(wordDao::deleteAll);
+        repository.deleteAll();
+    }
+
+    public void syncFromNetwork(Callback<List<Word>> callback) {
+        repository.syncFromNetwork(callback);
     }
 }

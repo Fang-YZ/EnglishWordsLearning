@@ -181,15 +181,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void syncWords() {
-        WordApiService apiService = RetrofitClient.getClient().create(WordApiService.class);
-        Call<List<Word>> call = apiService.getDailyWords();
         Toast.makeText(this, "正在同步...", Toast.LENGTH_SHORT).show();
-        call.enqueue(new Callback<List<Word>>() {
+        
+        wordViewModel.syncFromNetwork(new Callback<List<Word>>() {
             @Override
             public void onResponse(@NonNull Call<List<Word>> call, @NonNull Response<List<Word>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Word> downloadedWords = response.body();
-                    for (Word w : downloadedWords) {
+                    for (Word w : response.body()) {
                         wordViewModel.insert(w);
                     }
                     Toast.makeText(MainActivity.this, "同步成功！", Toast.LENGTH_SHORT).show();
@@ -197,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
                     mockSync();
                 }
             }
+
             @Override
             public void onFailure(@NonNull Call<List<Word>> call, @NonNull Throwable t) {
                 mockSync(); 

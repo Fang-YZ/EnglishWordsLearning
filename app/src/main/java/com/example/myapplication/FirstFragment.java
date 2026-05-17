@@ -2,14 +2,14 @@ package com.example.myapplication;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -39,10 +39,8 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. 初始化 ViewModel
         wordViewModel = new ViewModelProvider(this).get(WordViewModel.class);
 
-        // 2. 初始化 RecyclerView 和 Adapter
         adapter = new WordAdapter(new WordAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Word word) {
@@ -61,102 +59,15 @@ public class FirstFragment extends Fragment {
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerView.setAdapter(adapter);
 
-        // 3. 配置侧滑删除
         setupSwipeToDelete();
-
-        // 4. 配置搜索
-        binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) { return false; }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                observeWords(newText, currentSortType);
-                return true;
-            }
-        });
-
-        // 5. 随机测验逻辑
-        binding.btnStartQuiz.setOnClickListener(v -> startQuiz());
-
-        // 6. 下拉刷新逻辑
-        binding.swipeRefresh.setOnRefreshListener(() -> {
-            wordViewModel.syncFromNetwork(new retrofit2.Callback<java.util.List<Word>>() {
-                @Override
-                public void onResponse(@NonNull retrofit2.Call<java.util.List<Word>> call, @NonNull retrofit2.Response<java.util.List<Word>> response) {
-                    binding.swipeRefresh.setRefreshing(false);
-                    if (response.isSuccessful() && response.body() != null) {
-                        for (Word w : response.body()) wordViewModel.insert(w);
-                        Toast.makeText(getContext(), "同步成功！", Toast.LENGTH_SHORT).show();
-                    } else {
-                        mockSync();
-                    }
-                }
-
-                @Override
-                public void onFailure(@NonNull retrofit2.Call<java.util.List<Word>> call, @NonNull Throwable t) {
-                    binding.swipeRefresh.setRefreshing(false);
-                    mockSync();
-                }
-            });
-        });
-
-        // 设置菜单监听
+        setupSearch();
+        setupRefresh();
         setupMenu();
 
-        // 初始加载全部单词
-        observeWords("", 0);
-    }
-
-    private void mockSync() {
-        Toast.makeText(getContext(), "正在从模拟网络下载...", Toast.LENGTH_SHORT).show();
-        wordViewModel.insert(new Word("Retrofit", "一个很棒的网络库"));
-        wordViewModel.insert(new Word("JSON", "数据交换格式"));
-    }
-
-    private int currentSortType = 0;
-
-    private void setupMenu() {
-        requireActivity().addMenuProvider(new androidx.core.view.MenuProvider() {
-            @Override
-            public void onCreateMenu(@NonNull Menu menu, @NonNull android.view.MenuInflater menuInflater) {}
-
-            @Override
-            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
-                int id = menuItem.getItemId();
-                if (id == R.id.sort_priority) {
-                    currentSortType = 0;
-                    observeWords(binding.searchView.getQuery().toString(), 0);
-                    return true;
-                } else if (id == R.id.sort_az) {
-                    currentSortType = 1;
-                    observeWords(binding.searchView.getQuery().toString(), 1);
-                    return true;
-                } else if (id == R.id.sort_newest) {
-                    currentSortType = 2;
-                    observeWords(binding.searchView.getQuery().toString(), 2);
-                    return true;
-                }
-                return false;
-            }
-        }, getViewLifecycleOwner());
-    }
-
-    private void observeWords(String query, int sortType) {
-        // ViewModel 会处理数据的加载，我们只需“观察”
-        wordViewModel.getWordsSorted(0).removeObservers(getViewLifecycleOwner());
-        wordViewModel.getWordsSorted(1).removeObservers(getViewLifecycleOwner());
-        wordViewModel.getWordsSorted(2).removeObservers(getViewLifecycleOwner());
-        wordViewModel.searchWords(query).removeObservers(getViewLifecycleOwner());
-
-        androidx.lifecycle.LiveData<java.util.List<Word>> liveData;
-        if (query.isEmpty()) {
-            liveData = wordViewModel.getWordsSorted(sortType);
-        } else {
-            liveData = wordViewModel.searchWords(query);
-        }
-
-        liveData.observe(getViewLifecycleOwner(), this::updateUI);
+        // 核心：观察唯一的数据源
+        wordViewModel.getAllWords().observe(getViewLifecycleOwner(), this::updateUI);
+        
+        binding.btnStartQuiz.setOnClickListener(v -> startQuiz());
     }
 
     private void updateUI(List<Word> wordList) {
@@ -167,10 +78,73 @@ public class FirstFragment extends Fragment {
             binding.layoutEmpty.setVisibility(View.GONE);
             binding.recyclerView.setVisibility(View.VISIBLE);
         }
-        
-        // ListAdapter 的核心：通过 submitList 提交新数据，它会自动做差异对比
         adapter.submitList(wordList);
         updateProgress(wordList);
+    }
+
+    private void setupSearch() {
+        binding.searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) { return false; }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                wordViewModel.setSearchQuery(newText);
+                return true;
+            }
+        });
+    }
+
+    private void setupRefresh() {
+        binding.swipeRefresh.setOnRefreshListener(() -> {
+            wordViewModel.syncFromNetwork(new retrofit2.Callback<List<Word>>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<List<Word>> call, @NonNull retrofit2.Response<List<Word>> response) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (Word w : response.body()) wordViewModel.insert(w);
+                        Toast.makeText(getContext(), "同步成功！", Toast.LENGTH_SHORT).show();
+                    } else {
+                        mockSync();
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<List<Word>> call, @NonNull Throwable t) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    mockSync();
+                }
+            });
+        });
+    }
+
+    private void setupMenu() {
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull android.view.MenuInflater menuInflater) {}
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                int id = menuItem.getItemId();
+                if (id == R.id.sort_priority) {
+                    wordViewModel.setSortOrder(0);
+                    return true;
+                } else if (id == R.id.sort_az) {
+                    wordViewModel.setSortOrder(1);
+                    return true;
+                } else if (id == R.id.sort_newest) {
+                    wordViewModel.setSortOrder(2);
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner());
+    }
+
+    private void mockSync() {
+        Toast.makeText(getContext(), "正在从模拟网络下载...", Toast.LENGTH_SHORT).show();
+        wordViewModel.insert(new Word("Retrofit", "一个很棒的网络库"));
+        wordViewModel.insert(new Word("JSON", "数据交换格式"));
     }
 
     private void startQuiz() {
@@ -186,7 +160,6 @@ public class FirstFragment extends Fragment {
             Collections.shuffle(unmasteredWords);
             int quizSize = Math.min(10, unmasteredWords.size());
             ArrayList<Word> quizList = new ArrayList<>(unmasteredWords.subList(0, quizSize));
-            
             Bundle bundle = new Bundle();
             bundle.putSerializable("quiz_list", quizList);
             NavHostFragment.findNavController(this).navigate(R.id.action_FirstFragment_to_SecondFragment, bundle);
@@ -199,7 +172,6 @@ public class FirstFragment extends Fragment {
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
             }
-
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
@@ -228,11 +200,10 @@ public class FirstFragment extends Fragment {
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
         android.widget.EditText etEnglish = dialogView.findViewById(R.id.et_english);
         android.widget.EditText etChinese = dialogView.findViewById(R.id.et_chinese);
-
         etEnglish.setText(word.english);
         etChinese.setText(word.chinese);
 
-        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                 .setTitle("修改单词")
                 .setView(dialogView)
                 .setPositiveButton("保存", (d, which) -> {
