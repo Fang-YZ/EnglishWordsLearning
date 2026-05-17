@@ -39,7 +39,8 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        wordViewModel = new ViewModelProvider(this).get(WordViewModel.class);
+        // 统一使用 Activity 作用域，确保全局共享数据和线程池
+        wordViewModel = new ViewModelProvider(requireActivity()).get(WordViewModel.class);
 
         adapter = new WordAdapter(new WordAdapter.OnItemClickListener() {
             @Override
@@ -64,9 +65,7 @@ public class FirstFragment extends Fragment {
         setupRefresh();
         setupMenu();
 
-        // 核心：观察唯一的数据源
         wordViewModel.getAllWords().observe(getViewLifecycleOwner(), this::updateUI);
-        
         binding.btnStartQuiz.setOnClickListener(v -> startQuiz());
     }
 
@@ -145,7 +144,7 @@ public class FirstFragment extends Fragment {
     }
 
     private void mockSync() {
-        Toast.makeText(getContext(), "正在从模拟网络下载...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "正在同步...", Toast.LENGTH_SHORT).show();
         wordViewModel.insert(new Word("Retrofit", "一个很棒的网络库"));
         wordViewModel.insert(new Word("JSON", "数据交换格式"));
     }
@@ -202,19 +201,27 @@ public class FirstFragment extends Fragment {
     private void showEditDialog(Word word) {
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
         android.widget.EditText etEnglish = dialogView.findViewById(R.id.et_english);
+        android.widget.EditText etPos = dialogView.findViewById(R.id.et_pos);
         android.widget.EditText etChinese = dialogView.findViewById(R.id.et_chinese);
+        android.widget.EditText etSentence = dialogView.findViewById(R.id.et_sentence);
         etEnglish.setText(word.english);
+        etPos.setText(word.partOfSpeech);
         etChinese.setText(word.chinese);
+        etSentence.setText(word.exampleSentence);
 
         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                 .setTitle("修改单词")
                 .setView(dialogView)
                 .setPositiveButton("保存", (d, which) -> {
                     String eng = etEnglish.getText().toString().trim();
+                    String pos = etPos.getText().toString().trim();
                     String chi = etChinese.getText().toString().trim();
+                    String sen = etSentence.getText().toString().trim();
                     if (!eng.isEmpty() && !chi.isEmpty()) {
                         word.english = eng;
+                        word.partOfSpeech = pos;
                         word.chinese = chi;
+                        word.exampleSentence = sen;
                         wordViewModel.update(word);
                     }
                 })

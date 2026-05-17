@@ -96,16 +96,24 @@ public class MainActivity extends AppCompatActivity {
         binding.fab.setOnClickListener(view -> {
             View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_word, null);
             EditText etEnglish = dialogView.findViewById(R.id.et_english);
+            EditText etPos = dialogView.findViewById(R.id.et_pos);
             EditText etChinese = dialogView.findViewById(R.id.et_chinese);
+            EditText etSentence = dialogView.findViewById(R.id.et_sentence);
 
             AlertDialog dialog = new AlertDialog.Builder(this)
                     .setTitle("添加新单词")
                     .setView(dialogView)
                     .setPositiveButton("添加", (d, which) -> {
                         String english = etEnglish.getText().toString().trim();
+                        String pos = etPos.getText().toString().trim();
                         String chinese = etChinese.getText().toString().trim();
+                        String sentence = etSentence.getText().toString().trim();
+                        
                         if (!english.isEmpty() && !chinese.isEmpty()) {
-                            wordViewModel.insert(new Word(english, chinese));
+                            Word newWord = new Word(english, chinese);
+                            newWord.partOfSpeech = pos;
+                            newWord.exampleSentence = sentence;
+                            wordViewModel.insert(newWord);
                         }
                     })
                     .setNegativeButton("取消", null)
@@ -137,6 +145,15 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         
+        if (id == R.id.action_achievement) {
+            // 跳转到成就页面
+            NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment_content_main);
+            if (navHostFragment != null) {
+                navHostFragment.getNavController().navigate(R.id.AchievementFragment);
+            }
+            return true;
+        }
+
         if (id == R.id.action_sync) {
             syncWords();
             return true;
@@ -211,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void importWordsFromFile(Uri uri) {
-        Executors.newSingleThreadExecutor().execute(() -> {
+        wordViewModel.getExecutor().execute(() -> {
             int count = 0;
             try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
                 if (inputStream == null) return;
@@ -275,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                Executors.newSingleThreadExecutor().execute(() -> {
+                wordViewModel.getExecutor().execute(() -> {
                     try (OutputStream outputStream = getContentResolver().openOutputStream(uri)) {
                         StringBuilder sb = new StringBuilder();
                         // 写入 CSV 头（可选）

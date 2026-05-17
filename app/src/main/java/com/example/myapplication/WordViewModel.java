@@ -7,11 +7,11 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import retrofit2.Callback;
 
 /**
- * ViewModel 升级版：通过 Repository 获取数据
- * 遵循 MVVM 架构
+ * ViewModel：管理全局状态，共享数据源
  */
 public class WordViewModel extends AndroidViewModel {
 
@@ -22,9 +22,9 @@ public class WordViewModel extends AndroidViewModel {
 
     public WordViewModel(@NonNull Application application) {
         super(application);
-        repository = new WordRepository(application);
+        // 使用单例仓库
+        repository = WordRepository.getInstance(application);
         
-        // 核心优化：动态监听搜索和排序的变化
         words = Transformations.switchMap(searchQuery, query -> {
             if (query == null || query.isEmpty()) {
                 return Transformations.switchMap(sortOrder, order -> 
@@ -66,5 +66,9 @@ public class WordViewModel extends AndroidViewModel {
 
     public void syncFromNetwork(Callback<List<Word>> callback) {
         repository.syncFromNetwork(callback);
+    }
+    
+    public ExecutorService getExecutor() {
+        return repository.getExecutor();
     }
 }

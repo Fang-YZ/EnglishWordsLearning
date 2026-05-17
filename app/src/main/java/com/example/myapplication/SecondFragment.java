@@ -34,6 +34,7 @@ public class SecondFragment extends Fragment {
         return binding.getRoot();
     }
 
+    @SuppressWarnings({"unchecked", "deprecation"})
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -47,7 +48,16 @@ public class SecondFragment extends Fragment {
         }
 
         // 检查模式
-        quizList = (ArrayList<Word>) getArguments().getSerializable("quiz_list");
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                quizList = getArguments().getSerializable("quiz_list", ArrayList.class);
+            } else {
+                // 这里会触发 deprecation 警告，我们通过 Suppress 解决
+                quizList = (ArrayList<Word>) getArguments().getSerializable("quiz_list");
+            }
+        } catch (Exception e) {
+            quizList = null;
+        }
         
         Word word;
         if (quizList != null && !quizList.isEmpty()) {
@@ -55,7 +65,11 @@ public class SecondFragment extends Fragment {
             binding.tvQuizProgress.setVisibility(View.VISIBLE);
             updateQuizProgress();
         } else {
-            word = (Word) getArguments().getSerializable("selected_word");
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                word = getArguments().getSerializable("selected_word", Word.class);
+            } else {
+                word = (Word) getArguments().getSerializable("selected_word");
+            }
             binding.tvQuizProgress.setVisibility(View.GONE);
         }
 
@@ -89,6 +103,7 @@ public class SecondFragment extends Fragment {
 
         binding.btnShowAnswer.setOnClickListener(v -> {
             binding.tvDetailChinese.setVisibility(View.VISIBLE);
+            binding.tvDetailSentence.setVisibility(View.VISIBLE); // 同时显示例句
             binding.btnShowAnswer.setVisibility(View.GONE);
             binding.layoutQuizActions.setVisibility(View.VISIBLE);
         });
@@ -154,8 +169,12 @@ public class SecondFragment extends Fragment {
 
     private void showWord(Word word) {
         binding.tvDetailEnglish.setText(word.english);
+        binding.tvDetailPos.setText(word.partOfSpeech != null ? word.partOfSpeech : "");
         binding.tvDetailChinese.setText(word.chinese);
+        binding.tvDetailSentence.setText(word.exampleSentence != null ? word.exampleSentence : "");
+        
         binding.tvDetailChinese.setVisibility(View.INVISIBLE);
+        binding.tvDetailSentence.setVisibility(View.INVISIBLE);
         binding.btnShowAnswer.setVisibility(View.VISIBLE);
         binding.layoutQuizActions.setVisibility(View.GONE);
         playAudio(word.english);

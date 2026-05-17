@@ -62,6 +62,16 @@
                     android:textStyle="bold"
                     android:text="Apple"/>
 
+                <TextView
+                    android:id="@+id/tv_detail_pos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="n."
+                    android:textColor="#999999"
+                    android:textSize="18sp"
+                    android:textStyle="italic" />
+
                 <ImageButton
                     android:id="@+id/btn_play_audio"
                     android:layout_width="48dp"
@@ -80,6 +90,20 @@
                 android:textSize="24sp"
                 android:layout_marginTop="20dp"
                 android:text="苹果"
+                android:visibility="invisible" />
+
+            <!-- 【新增】例句显示：默认隐藏 -->
+            <TextView
+                android:id="@+id/tv_detail_sentence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="24dp"
+                android:text="An apple a day keeps the doctor away."
+                android:gravity="center"
+                android:textColor="#666666"
+                android:textSize="16sp"
+                android:textStyle="italic"
                 android:visibility="invisible" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>

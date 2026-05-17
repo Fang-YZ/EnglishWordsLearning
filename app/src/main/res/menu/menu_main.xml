@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.myapplication.MainActivity">
     <item
+        android:id="@+id/action_achievement"
+        android:orderInCategory="70"
+        android:title="学习成就"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_sort"
         android:orderInCategory="80"
         android:title="列表排序"

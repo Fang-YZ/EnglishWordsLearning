@@ -1,23 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="wrap_content">
 
-    <EditText
-        android:id="@+id/et_english"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="输入英文单词"
-        android:inputType="text" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <EditText
-        android:id="@+id/et_chinese"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:hint="输入中文释义"
-        android:inputType="text" />
+        <EditText
+            android:id="@+id/et_english"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="输入英文单词"
+            android:inputType="text" />
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/et_pos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="词性 (如 n. v. adj.)"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/et_chinese"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="输入中文释义"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/et_sentence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="输入例句 (可选)"
+            android:gravity="top"
+            android:lines="3"
+            android:inputType="textMultiLine" />
+
+    </LinearLayout>
+</ScrollView>

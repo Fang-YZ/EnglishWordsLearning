@@ -5,33 +5,45 @@ import androidx.lifecycle.LiveData;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import retrofit2.Call;
 import retrofit2.Callback;
 
 /**
- * 仓库类 (Repository)：数据的唯一调度中心
- * 负责协调数据库 (Room) 和 网络接口 (Retrofit)
+ * 仓库类 (Repository)：单例模式
+ * 负责协调所有数据的存取，确保全局只有一个线程池
  */
 public class WordRepository {
 
+    private static volatile WordRepository INSTANCE;
     private final WordDao wordDao;
     private final WordApiService apiService;
     private final ExecutorService executorService;
 
-    public WordRepository(Application application) {
+    private WordRepository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
         wordDao = db.wordDao();
         apiService = RetrofitClient.getClient().create(WordApiService.class);
-        executorService = Executors.newFixedThreadPool(4);
+        // 全局共享一个线程池，防止线程过多导致系统卡顿
+        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
-    // --- 数据库操作 ---
+    public static WordRepository getInstance(Application application) {
+        if (INSTANCE == null) {
+            synchronized (WordRepository.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new WordRepository(application);
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    // --- 数据方法 ---
 
     public LiveData<List<Word>> getWordsSorted(int sortType) {
         switch (sortType) {
             case 1: return wordDao.getWordsAlphabetical();
             case 2: return wordDao.getWordsNewest();
-            case 3: return wordDao.getDueReviewWords(System.currentTimeMillis()); // 艾宾浩斯
+            case 3: return wordDao.getDueReviewWords(System.currentTimeMillis());
             default: return wordDao.getWordsByReviewPriority();
         }
     }
@@ -56,9 +68,11 @@ public class WordRepository {
         executorService.execute(wordDao::deleteAll);
     }
 
-    // --- 网络操作 ---
-
     public void syncFromNetwork(Callback<List<Word>> callback) {
         apiService.getDailyWords().enqueue(callback);
+    }
+
+    public ExecutorService getExecutor() {
+        return executorService;
     }
 }

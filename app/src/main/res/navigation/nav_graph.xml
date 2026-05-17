@@ -35,7 +35,16 @@
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+        <action
+            android:id="@+id/action_FirstFragment_to_AchievementFragment"
+            app:destination="@id/AchievementFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/AchievementFragment"
+        android:name="com.example.myapplication.AchievementFragment"
+        android:label="我的成就"
+        tools:layout="@layout/fragment_achievement" />
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.example.myapplication.SecondFragment"
