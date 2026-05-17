@@ -15,6 +15,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -53,6 +55,16 @@ public class MainActivity extends AppCompatActivity {
             uri -> {
                 if (uri != null) {
                     importWordsFromFile(uri);
+                }
+            }
+    );
+
+    // 导出文件启动器
+    private final ActivityResultLauncher<String> fileCreatorLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"),
+            uri -> {
+                if (uri != null) {
+                    exportWordsToFile(uri);
                 }
             }
     );
@@ -130,6 +142,10 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_import) {
             filePickerLauncher.launch("*/*");
+            return true;
+        } else if (id == R.id.action_export) {
+            // 弹出保存文件对话框
+            fileCreatorLauncher.launch("my_words.csv");
             return true;
         } else if (id == R.id.action_clear_all) {
             showClearAllConfirmDialog();
@@ -242,5 +258,43 @@ public class MainActivity extends AppCompatActivity {
                     || super.onSupportNavigateUp();
         }
         return super.onSupportNavigateUp();
+    }
+
+    /**
+     * 将所有单词导出到 CSV 文件
+     */
+    private void exportWordsToFile(Uri uri) {
+        // 先获取所有单词数据
+        wordViewModel.getAllWords().observe(this, new androidx.lifecycle.Observer<List<Word>>() {
+            @Override
+            public void onChanged(List<Word> words) {
+                // 拿到一次数据后立即移除观察，防止循环触发
+                wordViewModel.getAllWords().removeObserver(this);
+                
+                if (words == null || words.isEmpty()) {
+                    Toast.makeText(MainActivity.this, "词库为空，无需导出", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    try (OutputStream outputStream = getContentResolver().openOutputStream(uri)) {
+                        StringBuilder sb = new StringBuilder();
+                        // 写入 CSV 头（可选）
+                        // sb.append("英文,中文\n");
+                        
+                        for (Word w : words) {
+                            sb.append(w.english).append(",").append(w.chinese).append("\n");
+                        }
+                        
+                        outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "词库导出成功！", Toast.LENGTH_LONG).show());
+                        
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "导出失败", Toast.LENGTH_SHORT).show());
+                    }
+                });
+            }
+        });
     }
 }

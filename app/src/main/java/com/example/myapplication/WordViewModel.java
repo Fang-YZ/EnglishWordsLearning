@@ -40,6 +40,11 @@ public class WordViewModel extends AndroidViewModel {
         return wordDao.searchWords("%" + query + "%");
     }
 
+    public void syncFromNetwork(retrofit2.Callback<List<Word>> callback) {
+        WordApiService apiService = RetrofitClient.getClient().create(WordApiService.class);
+        apiService.getDailyWords().enqueue(callback);
+    }
+
     public void insert(Word word) {
         executorService.execute(() -> wordDao.insert(word));
     }

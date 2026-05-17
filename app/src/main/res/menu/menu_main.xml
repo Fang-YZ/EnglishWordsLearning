@@ -24,6 +24,11 @@
         android:title="从文件导入单词"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_export"
+        android:orderInCategory="98"
+        android:title="导出单词本 (CSV)"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_clear_all"
         android:orderInCategory="100"
         android:title="清空词库"

@@ -79,11 +79,39 @@ public class FirstFragment extends Fragment {
         // 5. 随机测验逻辑
         binding.btnStartQuiz.setOnClickListener(v -> startQuiz());
 
+        // 6. 下拉刷新逻辑
+        binding.swipeRefresh.setOnRefreshListener(() -> {
+            wordViewModel.syncFromNetwork(new retrofit2.Callback<java.util.List<Word>>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<java.util.List<Word>> call, @NonNull retrofit2.Response<java.util.List<Word>> response) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (Word w : response.body()) wordViewModel.insert(w);
+                        Toast.makeText(getContext(), "同步成功！", Toast.LENGTH_SHORT).show();
+                    } else {
+                        mockSync();
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<java.util.List<Word>> call, @NonNull Throwable t) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    mockSync();
+                }
+            });
+        });
+
         // 设置菜单监听
         setupMenu();
 
         // 初始加载全部单词
         observeWords("", 0);
+    }
+
+    private void mockSync() {
+        Toast.makeText(getContext(), "正在从模拟网络下载...", Toast.LENGTH_SHORT).show();
+        wordViewModel.insert(new Word("Retrofit", "一个很棒的网络库"));
+        wordViewModel.insert(new Word("JSON", "数据交换格式"));
     }
 
     private int currentSortType = 0;
