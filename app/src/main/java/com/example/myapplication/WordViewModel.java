@@ -24,6 +24,18 @@ public class WordViewModel extends AndroidViewModel {
         return wordDao.getWordsByReviewPriority();
     }
 
+    /**
+     * 根据排序类型获取单词
+     * 0: 学习优先级, 1: 字母 A-Z, 2: 最新添加
+     */
+    public LiveData<List<Word>> getWordsSorted(int sortType) {
+        switch (sortType) {
+            case 1: return wordDao.getWordsAlphabetical();
+            case 2: return wordDao.getWordsNewest();
+            default: return wordDao.getWordsByReviewPriority();
+        }
+    }
+
     public LiveData<List<Word>> searchWords(String query) {
         return wordDao.searchWords("%" + query + "%");
     }
@@ -38,5 +50,9 @@ public class WordViewModel extends AndroidViewModel {
 
     public void delete(Word word) {
         executorService.execute(() -> wordDao.delete(word));
+    }
+
+    public void deleteAll() {
+        executorService.execute(wordDao::deleteAll);
     }
 }

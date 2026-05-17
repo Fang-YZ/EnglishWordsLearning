@@ -29,6 +29,14 @@ public interface WordDao {
     @Query("SELECT * FROM word_table ORDER BY learnCount ASC, id DESC")
     androidx.lifecycle.LiveData<List<Word>> getWordsByReviewPriority();
 
+    // 字母排序
+    @Query("SELECT * FROM word_table ORDER BY english ASC")
+    androidx.lifecycle.LiveData<List<Word>> getWordsAlphabetical();
+
+    // 最新添加排序
+    @Query("SELECT * FROM word_table ORDER BY id DESC")
+    androidx.lifecycle.LiveData<List<Word>> getWordsNewest();
+
     @Query("DELETE FROM word_table")
     void deleteAll();
 }

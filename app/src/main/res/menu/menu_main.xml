@@ -3,6 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.myapplication.MainActivity">
     <item
+        android:id="@+id/action_sort"
+        android:orderInCategory="80"
+        android:title="列表排序"
+        app:showAsAction="never">
+        <menu>
+            <item android:id="@+id/sort_priority" android:title="复习优先" />
+            <item android:id="@+id/sort_az" android:title="字母 A-Z" />
+            <item android:id="@+id/sort_newest" android:title="最新添加" />
+        </menu>
+    </item>
+    <item
         android:id="@+id/action_sync"
         android:orderInCategory="90"
         android:title="获取每日单词"
@@ -16,6 +27,11 @@
         android:id="@+id/action_clear_all"
         android:orderInCategory="100"
         android:title="清空词库"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="105"
+        android:title="退出登录"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"

@@ -4,6 +4,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -68,7 +71,7 @@ public class FirstFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                observeWords(newText);
+                observeWords(newText, currentSortType);
                 return true;
             }
         });
@@ -76,20 +79,56 @@ public class FirstFragment extends Fragment {
         // 5. 随机测验逻辑
         binding.btnStartQuiz.setOnClickListener(v -> startQuiz());
 
+        // 设置菜单监听
+        setupMenu();
+
         // 初始加载全部单词
-        observeWords("");
+        observeWords("", 0);
     }
 
-    private void observeWords(String query) {
+    private int currentSortType = 0;
+
+    private void setupMenu() {
+        requireActivity().addMenuProvider(new androidx.core.view.MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull android.view.MenuInflater menuInflater) {}
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                int id = menuItem.getItemId();
+                if (id == R.id.sort_priority) {
+                    currentSortType = 0;
+                    observeWords(binding.searchView.getQuery().toString(), 0);
+                    return true;
+                } else if (id == R.id.sort_az) {
+                    currentSortType = 1;
+                    observeWords(binding.searchView.getQuery().toString(), 1);
+                    return true;
+                } else if (id == R.id.sort_newest) {
+                    currentSortType = 2;
+                    observeWords(binding.searchView.getQuery().toString(), 2);
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner());
+    }
+
+    private void observeWords(String query, int sortType) {
         // ViewModel 会处理数据的加载，我们只需“观察”
-        wordViewModel.getAllWords().removeObservers(getViewLifecycleOwner());
+        wordViewModel.getWordsSorted(0).removeObservers(getViewLifecycleOwner());
+        wordViewModel.getWordsSorted(1).removeObservers(getViewLifecycleOwner());
+        wordViewModel.getWordsSorted(2).removeObservers(getViewLifecycleOwner());
         wordViewModel.searchWords(query).removeObservers(getViewLifecycleOwner());
 
+        androidx.lifecycle.LiveData<java.util.List<Word>> liveData;
         if (query.isEmpty()) {
-            wordViewModel.getAllWords().observe(getViewLifecycleOwner(), this::updateUI);
+            liveData = wordViewModel.getWordsSorted(sortType);
         } else {
-            wordViewModel.searchWords(query).observe(getViewLifecycleOwner(), this::updateUI);
+            liveData = wordViewModel.searchWords(query);
         }
+
+        liveData.observe(getViewLifecycleOwner(), this::updateUI);
     }
 
     private void updateUI(List<Word> wordList) {
